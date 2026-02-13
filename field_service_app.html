@@ -1,0 +1,2694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Field Service Report - Oxidation Technologies</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Field Service Repair Report for Oxidation Technologies">
+    <meta name="theme-color" content="#1F4E79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OxiTech FSR">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons for iOS -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f0f4f8;
+            color: #1a202c;
+            line-height: 1.5;
+        }
+        
+        /* Offline indicator */
+        .offline-indicator {
+            display: none;
+            background: #f6ad55;
+            color: #744210;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .offline-indicator.show {
+            display: block;
+        }
+        
+        .online-indicator {
+            display: none;
+            background: #68d391;
+            color: #22543d;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            animation: fadeOut 3s forwards;
+        }
+        
+        .online-indicator.show {
+            display: block;
+        }
+        
+        @keyframes fadeOut {
+            0%, 70% { opacity: 1; }
+            100% { opacity: 0; display: none; }
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+        
+        header {
+            background: white;
+            color: #1F4E79;
+            padding: 20px;
+            text-align: center;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 0;
+            border-bottom: 3px solid #2E75B6;
+        }
+        
+        header .logo {
+            max-width: 320px;
+            height: auto;
+            margin-bottom: 12px;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .logo {
+            max-height: 80px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        
+        .header-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .header-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1F4E79;
+            margin-top: 10px;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .section {
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: #2E75B6;
+            color: white;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .section-header:hover {
+            background: #1F4E79;
+        }
+        
+        .section-header .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-header .toggle {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+        
+        .section-header.collapsed .toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .hide-section-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .hide-section-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .hide-section-btn.active {
+            background: #f6ad55;
+            border-color: #ed8936;
+        }
+        
+        /* Field hiding */
+        .field.hidden-field,
+        .checklist-item.hidden-field,
+        tr.hidden-field {
+            display: none !important;
+        }
+        
+        /* Edit mode styling */
+        .edit-mode .field,
+        .edit-mode .checklist-item,
+        .edit-mode .test-table tbody tr:not(.add-row-tr) {
+            position: relative;
+        }
+        
+        .field-hide-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            background: #fc8181;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            line-height: 1;
+        }
+        
+        .field-hide-btn:hover {
+            background: #e53e3e;
+        }
+        
+        .edit-mode .field-hide-btn {
+            display: flex;
+        }
+        
+        .checklist-item .field-hide-btn {
+            top: 50%;
+            transform: translateY(-50%);
+            right: -8px;
+        }
+        
+        /* Hidden fields manager */
+        .hidden-fields-manager {
+            background: #fffaf0;
+            border: 1px solid #ed8936;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+        
+        .hidden-fields-manager h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: #c05621;
+        }
+        
+        .hidden-fields-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .restore-field-btn {
+            background: #feebc8;
+            border: 1px solid #ed8936;
+            color: #c05621;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .restore-field-btn:hover {
+            background: #fbd38d;
+        }
+        
+        .section-content {
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+        }
+        
+        .section-content.collapsed {
+            display: none;
+        }
+        
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        @media (max-width: 600px) {
+            .field-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .field.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 4px;
+        }
+        
+        input, select, textarea {
+            padding: 10px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2E75B6;
+            box-shadow: 0 0 0 3px rgba(46, 117, 182, 0.2);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        
+        @media (max-width: 900px) {
+            .checklist-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .checklist-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: #f7fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            gap: 8px;
+        }
+        
+        .checklist-item span {
+            font-size: 0.85rem;
+            flex-shrink: 1;
+            min-width: 0;
+        }
+        
+        .status-select {
+            padding: 5px 8px;
+            font-size: 0.8rem;
+            min-width: 70px;
+            flex-shrink: 0;
+        }
+        
+        .status-select.like-new {
+            background: #c6f6d5;
+            border-color: #48bb78;
+        }
+        
+        .status-select.well-maintained {
+            background: #bee3f8;
+            border-color: #4299e1;
+        }
+        
+        .status-select.attention-needed {
+            background: #fed7d7;
+            border-color: #f56565;
+        }
+        
+        .test-table {
+            width: auto;
+            border-collapse: collapse;
+        }
+        
+        .test-table th {
+            background: #f7fafc;
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .test-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .test-table input {
+            width: 80px;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .test-table .param-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .diff-field {
+            background: #f7fafc;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .diff-field.positive {
+            color: #48bb78;
+        }
+        
+        .diff-field.negative {
+            color: #f56565;
+        }
+        
+        .no-measure {
+            text-align: center;
+            color: #a0aec0;
+            font-style: italic;
+        }
+        
+        .pass-fail {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .pass-fail label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .pass-fail input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .dynamic-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .dynamic-table th {
+            background: #f7fafc;
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .dynamic-table td {
+            padding: 6px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+        
+        .dynamic-table input, .dynamic-table textarea {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .dynamic-table textarea {
+            min-height: 40px;
+        }
+        
+        .perf-table input[type="text"] {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .perf-table td:first-child input {
+            text-align: left;
+        }
+        
+        .add-row-btn {
+            margin-top: 8px;
+            padding: 8px 16px;
+            background: #e2e8f0;
+            border: 1px dashed #a0aec0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+        
+        .add-row-btn:hover {
+            background: #cbd5e0;
+            border-color: #718096;
+        }
+        
+        .remove-row-btn {
+            background: #f56565;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .remove-row-btn:hover {
+            background: #e53e3e;
+        }
+        
+        .labor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        
+        @media (max-width: 600px) {
+            .labor-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .follow-up-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        
+        @media (max-width: 600px) {
+            .follow-up-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Enhanced Mobile Styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 8px;
+            }
+            
+            header {
+                padding: 12px;
+            }
+            
+            header .logo {
+                max-width: 260px;
+            }
+            
+            header h1 {
+                font-size: 1.1rem;
+            }
+            
+            .form-container {
+                padding: 12px;
+            }
+            
+            .section-header {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+            
+            .section-content {
+                padding: 10px;
+            }
+            
+            /* Make tables horizontally scrollable */
+            .table-wrapper {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-bottom: 8px;
+            }
+            
+            .test-table {
+                min-width: 500px;
+            }
+            
+            .dynamic-table {
+                min-width: 600px;
+            }
+            
+            .test-table th,
+            .test-table td,
+            .dynamic-table th,
+            .dynamic-table td {
+                padding: 6px 4px;
+                font-size: 0.8rem;
+            }
+            
+            .test-table input {
+                width: 60px;
+                padding: 6px;
+                font-size: 0.85rem;
+            }
+            
+            .dynamic-table input,
+            .dynamic-table textarea {
+                padding: 6px;
+                font-size: 0.85rem;
+            }
+            
+            .checklist-item {
+                padding: 8px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            
+            .checklist-item span {
+                font-size: 0.85rem;
+            }
+            
+            .status-select {
+                width: 100%;
+                padding: 8px;
+            }
+            
+            .pass-fail {
+                flex-direction: column;
+                gap: 6px;
+                align-items: flex-start;
+            }
+            
+            .signature-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .signature-area {
+                padding: 12px;
+            }
+            
+            .signature-area canvas {
+                width: 100% !important;
+                max-width: 300px;
+                height: 100px !important;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group button {
+                width: 100%;
+            }
+            
+            input, select, textarea {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        /* Table wrapper for horizontal scroll */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            .table-wrapper::after {
+                content: '← Scroll →';
+                display: block;
+                text-align: center;
+                font-size: 0.75rem;
+                color: #a0aec0;
+                padding: 4px;
+                background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,1) 20%, rgba(255,255,255,1) 80%, rgba(255,255,255,0));
+            }
+        }
+        
+        .signature-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #f7fafc;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .signature-area:hover {
+            border-color: #2E75B6;
+            background: #ebf4ff;
+        }
+        
+        .signature-area canvas {
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+            touch-action: none;
+        }
+        
+        .signature-controls {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .signature-controls button {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .clear-sig {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e0;
+            color: #4a5568;
+        }
+        
+        /* Photo Documentation Styles */
+        .photo-upload-area {
+            text-align: center;
+            padding: 20px;
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .add-photo-btn {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .add-photo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+        
+        .photo-hint {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #718096;
+        }
+        
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .photo-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .photo-preview {
+            position: relative;
+            width: 100%;
+            padding-top: 75%; /* 4:3 aspect ratio */
+            background: #f0f4f8;
+        }
+        
+        .photo-preview img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            background: rgba(229, 62, 62, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .photo-remove-btn:hover {
+            background: #c53030;
+            transform: scale(1.1);
+        }
+        
+        .photo-details {
+            padding: 12px;
+        }
+        
+        .photo-details label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .photo-details textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .photo-meta {
+            font-size: 0.75rem;
+            color: #a0aec0;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 600px) {
+            .photo-gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #1F4E79 0%, #2E75B6 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 78, 121, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #276749 0%, #48bb78 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 103, 73, 0.4);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: #48bb78;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .timestamp {
+            font-size: 0.8rem;
+            color: #718096;
+            text-align: right;
+            margin-top: 8px;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+            .section-header {
+                background: #2E75B6 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .btn-group {
+                display: none;
+            }
+            .section-content {
+                display: grid !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status Indicators -->
+    <div id="offlineIndicator" class="offline-indicator">
+        📴 You're offline - Reports will be saved and submitted when connection returns
+    </div>
+    <div id="onlineIndicator" class="online-indicator">
+        ✓ Back online - Syncing pending reports...
+    </div>
+    
+    <div class="container">
+        <header>
+            <img src="data:image/webp;base64,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" alt="Oxidation Technologies Logo" class="logo">
+            <h1>FIELD SERVICE REPAIR REPORT</h1>
+        </header>
+        
+        <div class="form-container">
+            <form id="serviceForm">
+                
+                <!-- Hidden Fields Manager -->
+                <div id="hiddenFieldsManager" class="hidden-fields-manager" style="display:none;">
+                    <h4>🔧 Hidden Fields (click to restore)</h4>
+                    <div id="hiddenFieldsList" class="hidden-fields-list"></div>
+                </div>
+                
+                <!-- Customer / Site Information -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span>Customer / Site Information</span>
+                        <span class="header-controls">
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="customerName">Customer Name</label>
+                                <input type="text" id="customerName" name="customerName" required>
+                            </div>
+                            <div class="field">
+                                <label for="siteLocation">Site Location</label>
+                                <input type="text" id="siteLocation" name="siteLocation">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="contactName">Contact Name</label>
+                                <input type="text" id="contactName" name="contactName">
+                            </div>
+                            <div class="field">
+                                <label for="contactPhone">Contact Phone</label>
+                                <input type="tel" id="contactPhone" name="contactPhone">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="contactEmail">Contact Email</label>
+                                <input type="email" id="contactEmail" name="contactEmail">
+                            </div>
+                            <div class="field">
+                                <label for="poNumber">SO#</label>
+                                <input type="text" id="poNumber" name="poNumber">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Service Information -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span>Service Information</span>
+                        <span class="header-controls">
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="serviceDate">Service Date</label>
+                                <input type="date" id="serviceDate" name="serviceDate" required>
+                            </div>
+                            <div class="field">
+                                <label for="technician">Technician</label>
+                                <input type="text" id="technician" name="technician" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="arrivalTime">Arrival Time</label>
+                                <input type="time" id="arrivalTime" name="arrivalTime">
+                            </div>
+                            <div class="field">
+                                <label for="departureTime">Departure Time</label>
+                                <input type="time" id="departureTime" name="departureTime">
+                            </div>
+                        </div>
+                        <div class="field full-width">
+                            <label for="serviceType">Service Type</label>
+                            <select id="serviceType" name="serviceType">
+                                <option value="">Select service type...</option>
+                                <option value="PM">Preventive Maintenance</option>
+                                <option value="Repair">Repair</option>
+                                <option value="Installation">Installation</option>
+                                <option value="Inspection">Inspection</option>
+                                <option value="Startup">Startup/Commissioning</option>
+                                <option value="Training">Training</option>
+                                <option value="Warranty">Warranty Service</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Equipment Details -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="equipment-details">
+                        <span>Equipment Details</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="equipmentType">Equipment Type</label>
+                                <select id="equipmentType" name="equipmentType">
+                                    <option value="">Select equipment...</option>
+                                    <option value="Ozone Generator">Ozone Generator</option>
+                                    <option value="Oxygen Concentrator">Oxygen Concentrator</option>
+                                    <option value="Destruct System">Destruct System</option>
+                                    <option value="Injection System">Injection System</option>
+                                    <option value="Monitoring System">Monitoring System</option>
+                                    <option value="Cooling System">Cooling System</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="manufacturer">Manufacturer</label>
+                                <input type="text" id="manufacturer" name="manufacturer">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="modelNumber">Model Number</label>
+                                <input type="text" id="modelNumber" name="modelNumber">
+                            </div>
+                            <div class="field">
+                                <label for="serialNumber">Serial Number</label>
+                                <input type="text" id="serialNumber" name="serialNumber">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="installDate">Install Date</label>
+                                <input type="date" id="installDate" name="installDate">
+                            </div>
+                            <div class="field">
+                                <label for="operatingHours">Operating Hours</label>
+                                <input type="number" id="operatingHours" name="operatingHours">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reported Issue -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="reported-issue---reason-for-service">
+                        <span>Reported Issue / Reason for Service</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="field full-width">
+                            <label for="reportedIssue">Describe the reported issue or reason for this service call</label>
+                            <textarea id="reportedIssue" name="reportedIssue" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Visual Inspection Checklist -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="visual-inspection-checklist">
+                        <span>Visual Inspection Checklist</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="checklist-grid">
+                            <div class="checklist-item">
+                                <span>General Condition</span>
+                                <select class="status-select" name="check_generalCondition" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Electrical Connections</span>
+                                <select class="status-select" name="check_electricalConnections" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Enclosure / Housing</span>
+                                <select class="status-select" name="check_enclosure" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Wiring Integrity</span>
+                                <select class="status-select" name="check_wiring" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Corrosion / Rust</span>
+                                <select class="status-select" name="check_corrosion" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Safety Interlocks</span>
+                                <select class="status-select" name="check_safetyInterlocks" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Leaks (Air/Water/Gas)</span>
+                                <select class="status-select" name="check_leaks" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Ventilation / Cooling</span>
+                                <select class="status-select" name="check_ventilation" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Fittings & Tubing</span>
+                                <select class="status-select" name="check_fittings" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                            <div class="checklist-item">
+                                <span>Labels & Markings</span>
+                                <select class="status-select" name="check_labels" onchange="updateSelectStyle(this)">
+                                    <option value="">--</option>
+                                    <option value="Like New">Like New</option>
+                                    <option value="Well Maintained">Well Maintained</option>
+                                    <option value="Attention Needed">Attention Needed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field full-width" style="margin-top: 12px;">
+                            <label for="inspectionComments">Inspection Comments</label>
+                            <textarea id="inspectionComments" name="inspectionComments" rows="3" placeholder="Note any issues, observations, or details about items marked 'Attention Needed'..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Operational Testing Results -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="operational-testing-results">
+                        <span>Operational Testing Results</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="table-wrapper">
+                        <table class="test-table" id="testingTable">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Specification</th>
+                                    <th>Measured</th>
+                                    <th>Difference</th>
+                                    <th style="text-align:center">Pass/Fail</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="testingBody">
+                                <tr>
+                                    <td class="param-name">Input Voltage (VAC)</td>
+                                    <td><input type="text" name="spec_voltage" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="measured_voltage" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="diff_voltage" class="diff-field" readonly></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="pf_voltage" value="Pass"> Pass</label>
+                                        <label><input type="radio" name="pf_voltage" value="Fail"> Fail</label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">Current Draw (A)</td>
+                                    <td><input type="text" name="spec_current" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="measured_current" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="diff_current" class="diff-field" readonly></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="pf_current" value="Pass"> Pass</label>
+                                        <label><input type="radio" name="pf_current" value="Fail"> Fail</label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">Oxygen Purity (%)</td>
+                                    <td><input type="text" name="spec_o2purity" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="measured_o2purity" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="diff_o2purity" class="diff-field" readonly></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="pf_o2purity" value="Pass"> Pass</label>
+                                        <label><input type="radio" name="pf_o2purity" value="Fail"> Fail</label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">System Pressure (PSI)</td>
+                                    <td><input type="text" name="spec_pressure" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="measured_pressure" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="diff_pressure" class="diff-field" readonly></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="pf_pressure" value="Pass"> Pass</label>
+                                        <label><input type="radio" name="pf_pressure" value="Fail"> Fail</label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">Pre Venturi (PSI)</td>
+                                    <td><input type="text" name="spec_venturi_inlet" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="measured_venturi_inlet" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="diff_venturi_inlet" class="diff-field" readonly></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="pf_venturi_inlet" value="Pass"> Pass</label>
+                                        <label><input type="radio" name="pf_venturi_inlet" value="Fail"> Fail</label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">Post Venturi (PSI)</td>
+                                    <td><input type="text" name="spec_venturi_outlet" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="measured_venturi_outlet" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="diff_venturi_outlet" class="diff-field" readonly></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="pf_venturi_outlet" value="Pass"> Pass</label>
+                                        <label><input type="radio" name="pf_venturi_outlet" value="Fail"> Fail</label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="param-name">Operating Temp (°F)</td>
+                                    <td><input type="text" name="spec_temp" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="measured_temp" oninput="calculateDiff(this)"></td>
+                                    <td><input type="text" name="diff_temp" class="diff-field" readonly></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="pf_temp" value="Pass"> Pass</label>
+                                        <label><input type="radio" name="pf_temp" value="Fail"> Fail</label>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <button type="button" class="add-row-btn" onclick="addTestingRow()">+ Add Parameter</button>
+                    </div>
+                </div>
+                
+                <!-- Operating Performance -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="operating-performance">
+                        <span>Operating Performance</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="table-wrapper">
+                            <table class="dynamic-table perf-table" id="performanceTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:20%">Component</th>
+                                        <th style="width:12%">Specifications</th>
+                                        <th style="width:12%">Actual Result</th>
+                                        <th style="width:15%">Action Taken</th>
+                                        <th style="width:30%">Comments</th>
+                                        <th style="text-align:center;width:8%">P/F</th>
+                                        <th style="width:3%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="performanceBody">
+                                    <tr>
+                                        <td><input type="text" name="perf_component_1" style="width:100%"></td>
+                                        <td><input type="text" name="perf_spec_1"></td>
+                                        <td><input type="text" name="perf_actual_1"></td>
+                                        <td>
+                                            <select name="perf_action_1" style="width:100%;padding:8px;">
+                                                <option value="">--</option>
+                                                <option value="Replaced">Replaced</option>
+                                                <option value="Repaired">Repaired</option>
+                                                <option value="Needs Replacement">Needs Replacement</option>
+                                                <option value="Needs Additional Repair">Needs Additional Repair</option>
+                                            </select>
+                                        </td>
+                                        <td><textarea name="perf_comments_1" rows="1" style="width:100%;min-height:36px;"></textarea></td>
+                                        <td class="pass-fail">
+                                            <label><input type="radio" name="perf_pf_1" value="Pass"> P</label>
+                                            <label><input type="radio" name="perf_pf_1" value="Fail"> F</label>
+                                        </td>
+                                        <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="add-row-btn" onclick="addPerformanceRow()">+ Add Row</button>
+                    </div>
+                </div>
+                
+                <!-- Repairs Performed -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="repairs-performed">
+                        <span>Repairs Performed</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="table-wrapper">
+                        <table class="dynamic-table" id="repairsTable">
+                            <thead>
+                                <tr>
+                                    <th>Component/System</th>
+                                    <th style="width:50%">Description of Repair</th>
+                                    <th>Result</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="repairsBody">
+                                <tr>
+                                    <td><input type="text" name="repair_component_1"></td>
+                                    <td><textarea name="repair_desc_1"></textarea></td>
+                                    <td>
+                                        <select name="repair_result_1" style="width:100%;padding:8px;">
+                                            <option value="">--</option>
+                                            <option value="Complete">Complete</option>
+                                            <option value="Partial">Partial</option>
+                                            <option value="Pending Parts">Pending Parts</option>
+                                            <option value="Requires Follow-up">Requires Follow-up</option>
+                                        </select>
+                                    </td>
+                                    <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <button type="button" class="add-row-btn" onclick="addRepairRow()">+ Add Repair</button>
+                    </div>
+                </div>
+                
+                <!-- Suggested Maintenance Interval -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="suggested-maintenance-interval-component-list">
+                        <span>Suggested Maintenance Interval Component List</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <p style="font-size:0.85rem;color:#718096;margin-bottom:12px;font-style:italic;">Will suggested interval be reached before next PM?</p>
+                        <div class="table-wrapper">
+                        <table class="dynamic-table" id="maintTable">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Suggested Interval</th>
+                                    <th>Current Hours / Last Replaced</th>
+                                    <th style="text-align:center">Before PM?</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="maintBody">
+                                <tr>
+                                    <td><input type="text" name="maint_component_1"></td>
+                                    <td><input type="text" name="maint_interval_1"></td>
+                                    <td><input type="text" name="maint_current_1"></td>
+                                    <td class="pass-fail">
+                                        <label><input type="radio" name="maint_pm_1" value="Yes"> Yes</label>
+                                        <label><input type="radio" name="maint_pm_1" value="No"> No</label>
+                                    </td>
+                                    <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <button type="button" class="add-row-btn" onclick="addMaintRow()">+ Add Component</button>
+                    </div>
+                </div>
+                
+                <!-- Parts Used -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="parts-used">
+                        <span>Parts Used</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="table-wrapper">
+                        <table class="dynamic-table" id="partsTable">
+                            <thead>
+                                <tr>
+                                    <th>Part Number</th>
+                                    <th style="width:50%">Description</th>
+                                    <th>Qty</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="partsBody">
+                                <tr>
+                                    <td><input type="text" name="part_number_1"></td>
+                                    <td><input type="text" name="part_desc_1"></td>
+                                    <td><input type="number" name="part_qty_1" min="1" style="width:60px;text-align:center;"></td>
+                                    <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <button type="button" class="add-row-btn" onclick="addPartRow()">+ Add Part</button>
+                    </div>
+                </div>
+                
+                <!-- Labor -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="labor">
+                        <span>Labor</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="labor-grid">
+                            <div class="field">
+                                <label for="serviceHours">Service Hours</label>
+                                <input type="number" id="serviceHours" name="serviceHours" step="0.25" min="0" onchange="calculateTotalHours()">
+                            </div>
+                            <div class="field">
+                                <label for="travelHours">Travel Hours</label>
+                                <input type="number" id="travelHours" name="travelHours" step="0.25" min="0" onchange="calculateTotalHours()">
+                            </div>
+                            <div class="field">
+                                <label for="totalHours">Total Hours</label>
+                                <input type="number" id="totalHours" name="totalHours" step="0.25" readonly style="background:#f7fafc;font-weight:600;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Technician Notes -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="technician-notes">
+                        <span>Technician Notes</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="field full-width">
+                            <label for="techNotes">General notes and observations</label>
+                            <textarea id="techNotes" name="techNotes" rows="4"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photo Documentation -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="photo-documentation">
+                        <span>Photo Documentation</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="photo-upload-area">
+                            <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display:none;" onchange="handlePhotoUpload(event)">
+                            <button type="button" class="add-photo-btn" onclick="document.getElementById('photoInput').click()">
+                                📷 Add Photos
+                            </button>
+                            <p class="photo-hint">Tap to take photos or select from gallery. Photos will be resized automatically.</p>
+                        </div>
+                        <div id="photoGallery" class="photo-gallery"></div>
+                    </div>
+                </div>
+                
+                <!-- Follow-Up Required -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)" data-section-id="follow-up-required">
+                        <span>Follow-Up Required</span>
+                        <span class="header-controls">
+                            <button type="button" class="hide-section-btn" onclick="event.stopPropagation(); toggleEditMode(this)">Edit Fields</button>
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="follow-up-row">
+                            <div class="field">
+                                <label for="followUpNeeded">Follow-Up Needed</label>
+                                <select id="followUpNeeded" name="followUpNeeded">
+                                    <option value="">Select...</option>
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="followUpDate">Estimated Date</label>
+                                <input type="date" id="followUpDate" name="followUpDate">
+                            </div>
+                            <div class="field">
+                                <label for="quoteNeeded">Quote Needed</label>
+                                <select id="quoteNeeded" name="quoteNeeded">
+                                    <option value="">Select...</option>
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field full-width">
+                            <label for="followUpDesc">Description</label>
+                            <textarea id="followUpDesc" name="followUpDesc" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Signatures -->
+                <div class="section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span>Signatures</span>
+                        <span class="header-controls">
+                            <span class="toggle">▼</span>
+                        </span>
+                    </div>
+                    <div class="section-content">
+                        <div class="field-row">
+                            <div class="field">
+                                <label>Technician Signature</label>
+                                <div class="signature-area" id="techSigArea">
+                                    <canvas id="techSigCanvas" width="300" height="100"></canvas>
+                                    <div class="signature-controls">
+                                        <button type="button" class="clear-sig" onclick="clearSignature('techSigCanvas')">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="techSigDate">Date</label>
+                                <input type="date" id="techSigDate" name="techSigDate">
+                            </div>
+                        </div>
+                        <div class="field-row" style="margin-top:16px;">
+                            <div class="field">
+                                <label>Customer Signature</label>
+                                <div class="signature-area" id="custSigArea">
+                                    <canvas id="custSigCanvas" width="300" height="100"></canvas>
+                                    <div class="signature-controls">
+                                        <button type="button" class="clear-sig" onclick="clearSignature('custSigCanvas')">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="custSigDate">Date</label>
+                                <input type="date" id="custSigDate" name="custSigDate">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="timestamp" id="timestamp"></p>
+                
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
+                    <button type="submit" class="btn btn-success">Submit Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast">Report saved!</div>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION - UPDATE THESE VALUES
+        // ============================================
+        
+        // Your Google Apps Script Web App URL (see setup instructions below)
+        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE';
+        
+        // Email configuration
+        const EMAIL_CONFIG = {
+            recipient: 'josh@oxidationtech.com',
+            ccRecipients: [], // Add additional emails here if needed, e.g. ['matt@oxidationtech.com']
+            subjectPrefix: 'Field Service Report'
+        };
+        
+        // Field mapping: URL parameter names to form field IDs/names
+        const FIELD_MAPPING = {
+            // Customer Info
+            'customer': 'customerName',
+            'site': 'siteLocation',
+            'contact': 'contactName',
+            'phone': 'contactPhone',
+            'email': 'contactEmail',
+            'so': 'soNumber',
+            // Equipment Info
+            'equipment': 'equipmentType',
+            'manufacturer': 'manufacturer',
+            'model': 'modelNumber',
+            'serial': 'serialNumber',
+            'install_date': 'installDate',
+            'hours': 'operatingHours',
+            // Service Info
+            'technician': 'technician',
+            'service_type': 'serviceType'
+        };
+        
+        // ============================================
+        // URL PARAMETER HANDLING
+        // ============================================
+        
+        function getUrlParameters() {
+            const params = new URLSearchParams(window.location.search);
+            const data = {};
+            params.forEach((value, key) => {
+                data[key] = decodeURIComponent(value);
+            });
+            return data;
+        }
+        
+        function prefillFromUrl() {
+            const params = getUrlParameters();
+            
+            Object.keys(params).forEach(paramName => {
+                const fieldName = FIELD_MAPPING[paramName] || paramName;
+                const element = document.getElementById(fieldName) || 
+                               document.querySelector(`[name="${fieldName}"]`);
+                
+                if (element) {
+                    if (element.tagName === 'SELECT') {
+                        // For dropdowns, try to match the option
+                        const options = element.options;
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].value.toLowerCase() === params[paramName].toLowerCase() ||
+                                options[i].text.toLowerCase() === params[paramName].toLowerCase()) {
+                                element.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    } else {
+                        element.value = params[paramName];
+                    }
+                }
+            });
+            
+            // Show indicator if pre-filled
+            if (Object.keys(params).length > 0) {
+                showToast('Form pre-filled from QR code');
+            }
+        }
+        
+        // ============================================
+        // GOOGLE SHEETS & EMAIL INTEGRATION
+        // ============================================
+        
+        function submitToGoogleSheets(data) {
+            if (GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
+                console.log('Google Sheets not configured. Data:', data);
+                showToast('Report saved locally (Google Sheets not configured)');
+                return Promise.resolve({ result: 'local' });
+            }
+            
+            // Add email configuration to submission
+            data.emailConfig = EMAIL_CONFIG;
+            
+            // Show loading state
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.disabled = true;
+            
+            return fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Required for Google Apps Script
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+                return { result: 'success' };
+            })
+            .catch(error => {
+                console.error('Submit error:', error);
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+                // Save locally as backup
+                saveFailedSubmission(data);
+                throw error;
+            });
+        }
+        
+        function saveFailedSubmission(data) {
+            const failed = JSON.parse(localStorage.getItem('failedSubmissions') || '[]');
+            data.failedAt = new Date().toISOString();
+            failed.push(data);
+            localStorage.setItem('failedSubmissions', JSON.stringify(failed));
+        }
+        
+        function retryFailedSubmissions() {
+            const failed = JSON.parse(localStorage.getItem('failedSubmissions') || '[]');
+            if (failed.length === 0) return;
+            
+            showToast(`Retrying ${failed.length} failed submission(s)...`);
+            
+            const remaining = [];
+            const promises = failed.map(data => {
+                return submitToGoogleSheets(data)
+                    .catch(() => {
+                        remaining.push(data);
+                    });
+            });
+            
+            Promise.all(promises).then(() => {
+                localStorage.setItem('failedSubmissions', JSON.stringify(remaining));
+                if (remaining.length === 0) {
+                    showToast('All submissions synced!');
+                } else {
+                    showToast(`${remaining.length} submission(s) still pending`);
+                }
+            });
+        }
+        
+        // ============================================
+        // PHOTO DOCUMENTATION
+        // ============================================
+        
+        // Photo storage array
+        let photos = [];
+        let photoCounter = 0;
+        
+        // Configuration for image resizing
+        const PHOTO_CONFIG = {
+            maxWidth: 1200,      // Maximum width in pixels
+            maxHeight: 1200,     // Maximum height in pixels
+            quality: 0.8,        // JPEG quality (0-1)
+            format: 'image/jpeg' // Output format
+        };
+        
+        function handlePhotoUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            
+            showToast(`Processing ${files.length} photo(s)...`);
+            
+            Array.from(files).forEach(file => {
+                if (!file.type.startsWith('image/')) {
+                    showToast('Please select only image files');
+                    return;
+                }
+                
+                resizeAndAddPhoto(file);
+            });
+            
+            // Reset input so same file can be selected again
+            event.target.value = '';
+        }
+        
+        function resizeAndAddPhoto(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                
+                img.onload = function() {
+                    // Calculate new dimensions
+                    let { width, height } = img;
+                    
+                    if (width > PHOTO_CONFIG.maxWidth) {
+                        height = (height * PHOTO_CONFIG.maxWidth) / width;
+                        width = PHOTO_CONFIG.maxWidth;
+                    }
+                    
+                    if (height > PHOTO_CONFIG.maxHeight) {
+                        width = (width * PHOTO_CONFIG.maxHeight) / height;
+                        height = PHOTO_CONFIG.maxHeight;
+                    }
+                    
+                    // Create canvas and resize
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Get resized image as data URL
+                    const resizedDataUrl = canvas.toDataURL(PHOTO_CONFIG.format, PHOTO_CONFIG.quality);
+                    
+                    // Calculate file sizes for display
+                    const originalSize = Math.round(file.size / 1024);
+                    const newSize = Math.round(resizedDataUrl.length * 0.75 / 1024); // Approximate
+                    
+                    // Add to photos array
+                    photoCounter++;
+                    const photoData = {
+                        id: photoCounter,
+                        dataUrl: resizedDataUrl,
+                        originalName: file.name,
+                        timestamp: new Date().toISOString(),
+                        width: Math.round(width),
+                        height: Math.round(height),
+                        originalSize: originalSize,
+                        newSize: newSize,
+                        notes: ''
+                    };
+                    
+                    photos.push(photoData);
+                    renderPhotoGallery();
+                    showToast('Photo added');
+                };
+                
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        function renderPhotoGallery() {
+            const gallery = document.getElementById('photoGallery');
+            
+            if (photos.length === 0) {
+                gallery.innerHTML = '';
+                return;
+            }
+            
+            gallery.innerHTML = photos.map((photo, index) => `
+                <div class="photo-item" data-photo-id="${photo.id}">
+                    <div class="photo-preview">
+                        <img src="${photo.dataUrl}" alt="Photo ${index + 1}">
+                        <button type="button" class="photo-remove-btn" onclick="removePhoto(${photo.id})" title="Remove photo">✕</button>
+                    </div>
+                    <div class="photo-details">
+                        <label for="photoNote_${photo.id}">Photo ${index + 1} Notes <span style="color:#e53e3e;">*</span></label>
+                        <textarea 
+                            id="photoNote_${photo.id}" 
+                            placeholder="Describe what this photo shows..."
+                            onchange="updatePhotoNote(${photo.id}, this.value)"
+                        >${photo.notes}</textarea>
+                        <div class="photo-meta">
+                            ${photo.width}×${photo.height}px • ${photo.newSize}KB (was ${photo.originalSize}KB)
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function removePhoto(photoId) {
+            if (confirm('Remove this photo?')) {
+                photos = photos.filter(p => p.id !== photoId);
+                renderPhotoGallery();
+                showToast('Photo removed');
+            }
+        }
+        
+        function updatePhotoNote(photoId, note) {
+            const photo = photos.find(p => p.id === photoId);
+            if (photo) {
+                photo.notes = note;
+            }
+        }
+        
+        function getPhotosForSubmission() {
+            return photos.map((photo, index) => ({
+                photoNumber: index + 1,
+                dataUrl: photo.dataUrl,
+                notes: photo.notes,
+                timestamp: photo.timestamp,
+                dimensions: `${photo.width}x${photo.height}`
+            }));
+        }
+        
+        function validatePhotos() {
+            // Check if all photos have notes
+            const missingNotes = photos.filter(p => !p.notes.trim());
+            if (missingNotes.length > 0) {
+                showToast(`Please add notes for all ${missingNotes.length} photo(s)`);
+                // Scroll to first photo without notes
+                const firstMissing = document.querySelector(`#photoNote_${missingNotes[0].id}`);
+                if (firstMissing) {
+                    firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstMissing.focus();
+                }
+                return false;
+            }
+            return true;
+        }
+        
+        // ============================================
+        // QR CODE GENERATOR HELPER
+        // ============================================
+        
+        function generateQRCodeUrl(customerData) {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const params = new URLSearchParams();
+            
+            Object.keys(customerData).forEach(key => {
+                if (customerData[key]) {
+                    params.append(key, customerData[key]);
+                }
+            });
+            
+            return baseUrl + '?' + params.toString();
+        }
+        
+        // Example: Generate URL for a customer
+        // const url = generateQRCodeUrl({
+        //     customer: 'Fermilab',
+        //     site: 'Wilson Hall',
+        //     contact: 'John Smith',
+        //     phone: '555-123-4567',
+        //     equipment: 'Ozone Generator',
+        //     manufacturer: 'Wedeco',
+        //     model: 'SMO-50',
+        //     serial: 'WDC-2024-001'
+        // });
+        // console.log('QR Code URL:', url);
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('serviceDate').value = today;
+            document.getElementById('techSigDate').value = today;
+            document.getElementById('custSigDate').value = today;
+            
+            // Initialize signature canvases
+            initSignature('techSigCanvas');
+            initSignature('custSigCanvas');
+            
+            // Update timestamp
+            updateTimestamp();
+            
+            // Load hidden fields preference
+            loadHiddenFields();
+            
+            // Pre-fill from URL parameters (QR code)
+            prefillFromUrl();
+            
+            // Load draft if exists (but don't override URL params)
+            const params = getUrlParameters();
+            if (Object.keys(params).length === 0) {
+                loadDraft();
+            }
+            
+            // Try to sync any failed submissions when online
+            if (navigator.onLine) {
+                retryFailedSubmissions();
+            }
+            
+            // Retry when coming back online
+            window.addEventListener('online', retryFailedSubmissions);
+        });
+        
+        // Toggle section collapse
+        function toggleSection(header) {
+            header.classList.toggle('collapsed');
+            header.nextElementSibling.classList.toggle('collapsed');
+        }
+        
+        // ============================================
+        // FIELD HIDE/SHOW FUNCTIONALITY
+        // ============================================
+        
+        // Track hidden fields
+        let hiddenFields = [];
+        let editModeActive = false;
+        
+        function toggleEditMode(button) {
+            const section = button.closest('.section');
+            const sectionContent = section.querySelector('.section-content');
+            
+            if (sectionContent.classList.contains('edit-mode')) {
+                // Exit edit mode
+                sectionContent.classList.remove('edit-mode');
+                button.classList.remove('active');
+                button.textContent = 'Edit Fields';
+                removeHideButtons(sectionContent);
+            } else {
+                // Enter edit mode
+                sectionContent.classList.add('edit-mode');
+                button.classList.add('active');
+                button.textContent = 'Done';
+                addHideButtons(sectionContent);
+            }
+        }
+        
+        function addHideButtons(container) {
+            // Add hide buttons to regular fields
+            container.querySelectorAll('.field:not(.hidden-field)').forEach(field => {
+                if (!field.querySelector('.field-hide-btn')) {
+                    const label = field.querySelector('label');
+                    const fieldName = label ? label.textContent.trim() : 'Field';
+                    const fieldId = label ? label.getAttribute('for') : 'field-' + Math.random().toString(36).substr(2, 9);
+                    
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'field-hide-btn';
+                    btn.innerHTML = '✕';
+                    btn.title = 'Hide this field';
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        hideField(field, fieldId, fieldName);
+                    };
+                    field.appendChild(btn);
+                }
+            });
+            
+            // Add hide buttons to checklist items
+            container.querySelectorAll('.checklist-item:not(.hidden-field)').forEach(item => {
+                if (!item.querySelector('.field-hide-btn')) {
+                    const span = item.querySelector('span');
+                    const fieldName = span ? span.textContent.trim() : 'Item';
+                    const select = item.querySelector('select');
+                    const fieldId = select ? select.name : 'item-' + Math.random().toString(36).substr(2, 9);
+                    
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'field-hide-btn';
+                    btn.innerHTML = '✕';
+                    btn.title = 'Hide this item';
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        hideField(item, fieldId, fieldName);
+                    };
+                    item.appendChild(btn);
+                }
+            });
+            
+            // Add hide buttons to table rows (for testing parameters)
+            container.querySelectorAll('.test-table tbody tr').forEach(row => {
+                if (row.querySelector('.remove-row-btn')) return; // Skip dynamic rows
+                if (row.querySelector('.field-hide-btn')) return; // Already has button
+                
+                const paramCell = row.querySelector('.param-name');
+                if (!paramCell) return;
+                
+                const fieldName = paramCell.textContent.trim();
+                const firstInput = row.querySelector('input');
+                const fieldId = firstInput ? firstInput.name : 'row-' + Math.random().toString(36).substr(2, 9);
+                
+                const lastCell = row.querySelector('td:last-child');
+                if (lastCell && lastCell.innerHTML.trim() === '') {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'field-hide-btn';
+                    btn.style.position = 'static';
+                    btn.style.display = 'inline-flex';
+                    btn.innerHTML = '✕';
+                    btn.title = 'Hide this row';
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        hideField(row, fieldId, fieldName);
+                    };
+                    lastCell.appendChild(btn);
+                }
+            });
+        }
+        
+        function removeHideButtons(container) {
+            container.querySelectorAll('.field-hide-btn').forEach(btn => btn.remove());
+        }
+        
+        function hideField(element, fieldId, fieldName) {
+            element.classList.add('hidden-field');
+            
+            // Find section name
+            const section = element.closest('.section');
+            const sectionHeader = section.querySelector('.section-header span');
+            const sectionName = sectionHeader ? sectionHeader.textContent.trim() : 'Unknown';
+            
+            hiddenFields.push({
+                id: fieldId,
+                name: fieldName,
+                section: sectionName,
+                element: element
+            });
+            
+            updateHiddenFieldsManager();
+            saveHiddenFields();
+            showToast(`"${fieldName}" hidden`);
+        }
+        
+        function showField(fieldId) {
+            const index = hiddenFields.findIndex(f => f.id === fieldId);
+            if (index !== -1) {
+                const field = hiddenFields[index];
+                field.element.classList.remove('hidden-field');
+                hiddenFields.splice(index, 1);
+                updateHiddenFieldsManager();
+                saveHiddenFields();
+                showToast(`"${field.name}" restored`);
+            }
+        }
+        
+        function updateHiddenFieldsManager() {
+            const manager = document.getElementById('hiddenFieldsManager');
+            const list = document.getElementById('hiddenFieldsList');
+            
+            if (hiddenFields.length === 0) {
+                manager.style.display = 'none';
+                return;
+            }
+            
+            manager.style.display = 'block';
+            list.innerHTML = hiddenFields.map(field => `
+                <button type="button" class="restore-field-btn" onclick="showField('${field.id}')" title="${field.section}">
+                    ${field.name}
+                </button>
+            `).join('');
+        }
+        
+        function saveHiddenFields() {
+            const data = hiddenFields.map(f => ({ id: f.id, name: f.name, section: f.section }));
+            localStorage.setItem('hiddenFields', JSON.stringify(data));
+        }
+        
+        function loadHiddenFields() {
+            const saved = localStorage.getItem('hiddenFields');
+            if (!saved) return;
+            
+            const data = JSON.parse(saved);
+            data.forEach(item => {
+                // Find the element by looking for inputs/selects with matching name
+                let element = null;
+                
+                // Try to find by input name
+                const input = document.querySelector(`[name="${item.id}"]`);
+                if (input) {
+                    element = input.closest('.field') || input.closest('.checklist-item') || input.closest('tr');
+                }
+                
+                // Try by label for
+                if (!element) {
+                    const label = document.querySelector(`label[for="${item.id}"]`);
+                    if (label) {
+                        element = label.closest('.field');
+                    }
+                }
+                
+                if (element) {
+                    element.classList.add('hidden-field');
+                    hiddenFields.push({
+                        id: item.id,
+                        name: item.name,
+                        section: item.section,
+                        element: element
+                    });
+                }
+            });
+            
+            updateHiddenFieldsManager();
+        }
+        
+        function showAllFields() {
+            hiddenFields.forEach(field => {
+                field.element.classList.remove('hidden-field');
+            });
+            hiddenFields = [];
+            updateHiddenFieldsManager();
+            saveHiddenFields();
+            showToast('All fields restored');
+        }
+        
+        // Update select styling based on value
+        function updateSelectStyle(select) {
+            select.classList.remove('like-new', 'well-maintained', 'attention-needed');
+            if (select.value === 'Like New') select.classList.add('like-new');
+            else if (select.value === 'Well Maintained') select.classList.add('well-maintained');
+            else if (select.value === 'Attention Needed') select.classList.add('attention-needed');
+        }
+        
+        // Calculate total hours
+        function calculateTotalHours() {
+            const service = parseFloat(document.getElementById('serviceHours').value) || 0;
+            const travel = parseFloat(document.getElementById('travelHours').value) || 0;
+            document.getElementById('totalHours').value = (service + travel).toFixed(2);
+        }
+        
+        // Row counters
+        let performanceRowCount = 1;
+        let repairRowCount = 1;
+        let maintRowCount = 1;
+        let partRowCount = 1;
+        let testingRowCount = 0;
+        
+        // Calculate difference between spec and measured
+        function calculateDiff(input) {
+            const row = input.closest('tr');
+            const inputs = row.querySelectorAll('input[type="text"]');
+            const specInput = inputs[0];
+            const measuredInput = inputs[1];
+            const diffInput = inputs[2];
+            
+            const spec = parseFloat(specInput.value);
+            const measured = parseFloat(measuredInput.value);
+            
+            if (!isNaN(spec) && !isNaN(measured)) {
+                const diff = measured - spec;
+                diffInput.value = diff >= 0 ? '+' + diff.toFixed(2) : diff.toFixed(2);
+                diffInput.classList.remove('positive', 'negative');
+                diffInput.classList.add(diff >= 0 ? 'positive' : 'negative');
+            } else {
+                diffInput.value = '';
+                diffInput.classList.remove('positive', 'negative');
+            }
+        }
+        
+        // Add testing parameter row
+        function addTestingRow() {
+            testingRowCount++;
+            const tbody = document.getElementById('testingBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="test_param_${testingRowCount}" placeholder="Parameter name"></td>
+                <td><input type="text" name="test_spec_${testingRowCount}" oninput="calculateDiff(this)"></td>
+                <td><input type="text" name="test_measured_${testingRowCount}" oninput="calculateDiff(this)"></td>
+                <td><input type="text" name="test_diff_${testingRowCount}" class="diff-field" readonly></td>
+                <td class="pass-fail">
+                    <label><input type="radio" name="test_pf_${testingRowCount}" value="Pass"> Pass</label>
+                    <label><input type="radio" name="test_pf_${testingRowCount}" value="Fail"> Fail</label>
+                </td>
+                <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+        
+        // Add performance row
+        function addPerformanceRow() {
+            performanceRowCount++;
+            const tbody = document.getElementById('performanceBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="perf_component_${performanceRowCount}" style="width:100%"></td>
+                <td><input type="text" name="perf_spec_${performanceRowCount}"></td>
+                <td><input type="text" name="perf_actual_${performanceRowCount}"></td>
+                <td>
+                    <select name="perf_action_${performanceRowCount}" style="width:100%;padding:8px;">
+                        <option value="">--</option>
+                        <option value="Replaced">Replaced</option>
+                        <option value="Repaired">Repaired</option>
+                        <option value="Needs Replacement">Needs Replacement</option>
+                        <option value="Needs Additional Repair">Needs Additional Repair</option>
+                    </select>
+                </td>
+                <td><textarea name="perf_comments_${performanceRowCount}" rows="1" style="width:100%;min-height:36px;"></textarea></td>
+                <td class="pass-fail">
+                    <label><input type="radio" name="perf_pf_${performanceRowCount}" value="Pass"> P</label>
+                    <label><input type="radio" name="perf_pf_${performanceRowCount}" value="Fail"> F</label>
+                </td>
+                <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+        
+        // Add repair row
+        function addRepairRow() {
+            repairRowCount++;
+            const tbody = document.getElementById('repairsBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="repair_component_${repairRowCount}"></td>
+                <td><textarea name="repair_desc_${repairRowCount}"></textarea></td>
+                <td>
+                    <select name="repair_result_${repairRowCount}" style="width:100%;padding:8px;">
+                        <option value="">--</option>
+                        <option value="Complete">Complete</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Pending Parts">Pending Parts</option>
+                        <option value="Requires Follow-up">Requires Follow-up</option>
+                    </select>
+                </td>
+                <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+        
+        // Add maintenance row
+        function addMaintRow() {
+            maintRowCount++;
+            const tbody = document.getElementById('maintBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="maint_component_${maintRowCount}"></td>
+                <td><input type="text" name="maint_interval_${maintRowCount}"></td>
+                <td><input type="text" name="maint_current_${maintRowCount}"></td>
+                <td class="pass-fail">
+                    <label><input type="radio" name="maint_pm_${maintRowCount}" value="Yes"> Yes</label>
+                    <label><input type="radio" name="maint_pm_${maintRowCount}" value="No"> No</label>
+                </td>
+                <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+        
+        // Add part row
+        function addPartRow() {
+            partRowCount++;
+            const tbody = document.getElementById('partsBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="part_number_${partRowCount}"></td>
+                <td><input type="text" name="part_desc_${partRowCount}"></td>
+                <td><input type="number" name="part_qty_${partRowCount}" min="1" style="width:60px;text-align:center;"></td>
+                <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+        
+        // Remove row
+        function removeRow(btn) {
+            const row = btn.closest('tr');
+            const tbody = row.parentNode;
+            if (tbody.children.length > 1) {
+                row.remove();
+            }
+        }
+        
+        // Signature pad functionality
+        function initSignature(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+            
+            ctx.strokeStyle = '#1a202c';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                if (e.touches) {
+                    return {
+                        x: (e.touches[0].clientX - rect.left) * scaleX,
+                        y: (e.touches[0].clientY - rect.top) * scaleY
+                    };
+                }
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+            
+            function startDrawing(e) {
+                isDrawing = true;
+                const pos = getPos(e);
+                lastX = pos.x;
+                lastY = pos.y;
+                e.preventDefault();
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                lastX = pos.x;
+                lastY = pos.y;
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+            }
+            
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            canvas.addEventListener('touchstart', startDrawing);
+            canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+        
+        function clearSignature(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('timestamp').textContent = 'Last updated: ' + now.toLocaleString();
+        }
+        
+        // Save draft to localStorage
+        function saveDraft() {
+            const form = document.getElementById('serviceForm');
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+            
+            // Save signatures as data URLs
+            data.techSignature = document.getElementById('techSigCanvas').toDataURL();
+            data.custSignature = document.getElementById('custSigCanvas').toDataURL();
+            
+            localStorage.setItem('fieldServiceDraft', JSON.stringify(data));
+            updateTimestamp();
+            showToast('Draft saved!');
+        }
+        
+        // Load draft from localStorage
+        function loadDraft() {
+            const saved = localStorage.getItem('fieldServiceDraft');
+            if (saved) {
+                const data = JSON.parse(saved);
+                const form = document.getElementById('serviceForm');
+                
+                Object.keys(data).forEach(key => {
+                    const element = form.elements[key];
+                    if (element) {
+                        if (element.type === 'radio') {
+                            const radio = form.querySelector(`input[name="${key}"][value="${data[key]}"]`);
+                            if (radio) radio.checked = true;
+                        } else {
+                            element.value = data[key];
+                        }
+                    }
+                });
+                
+                // Update select styles
+                document.querySelectorAll('.status-select').forEach(updateSelectStyle);
+                
+                // Restore signatures
+                if (data.techSignature) {
+                    const img = new Image();
+                    img.onload = function() {
+                        document.getElementById('techSigCanvas').getContext('2d').drawImage(img, 0, 0);
+                    };
+                    img.src = data.techSignature;
+                }
+                if (data.custSignature) {
+                    const img = new Image();
+                    img.onload = function() {
+                        document.getElementById('custSigCanvas').getContext('2d').drawImage(img, 0, 0);
+                    };
+                    img.src = data.custSignature;
+                }
+                
+                calculateTotalHours();
+            }
+        }
+        
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Form submission
+        document.getElementById('serviceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate photos have notes
+            if (photos.length > 0 && !validatePhotos()) {
+                return;
+            }
+            
+            // Collect all form data
+            const formData = new FormData(this);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+            
+            // Add signatures as data URLs
+            data.techSignature = document.getElementById('techSigCanvas').toDataURL();
+            data.custSignature = document.getElementById('custSigCanvas').toDataURL();
+            
+            // Add photos
+            data.photos = getPhotosForSubmission();
+            data.photoCount = photos.length;
+            
+            // Add submission metadata
+            data.submittedAt = new Date().toISOString();
+            data.submittedFrom = window.location.href;
+            
+            // Submit to Google Sheets
+            submitToGoogleSheets(data)
+                .then(result => {
+                    // Clear draft and photos
+                    localStorage.removeItem('fieldServiceDraft');
+                    photos = [];
+                    renderPhotoGallery();
+                    showToast('Report submitted successfully!');
+                    
+                    // Optional: Reset form or redirect
+                    // this.reset();
+                    // window.location.href = '/reports/confirmation';
+                })
+                .catch(error => {
+                    showToast('Saved offline - will sync when connected');
+                });
+        });
+        
+        // ============================================
+        // PWA & OFFLINE FUNCTIONALITY
+        // ============================================
+        
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+        
+        // Connection status handling
+        function updateConnectionStatus() {
+            const offlineIndicator = document.getElementById('offlineIndicator');
+            const onlineIndicator = document.getElementById('onlineIndicator');
+            
+            if (navigator.onLine) {
+                offlineIndicator.classList.remove('show');
+                // Show "back online" briefly if we were offline
+                if (onlineIndicator.dataset.wasOffline === 'true') {
+                    onlineIndicator.classList.add('show');
+                    setTimeout(() => {
+                        onlineIndicator.classList.remove('show');
+                    }, 3000);
+                }
+                onlineIndicator.dataset.wasOffline = 'false';
+            } else {
+                offlineIndicator.classList.add('show');
+                onlineIndicator.classList.remove('show');
+                onlineIndicator.dataset.wasOffline = 'true';
+            }
+        }
+        
+        // Check connection on load
+        updateConnectionStatus();
+        
+        // Listen for connection changes
+        window.addEventListener('online', function() {
+            updateConnectionStatus();
+            retryFailedSubmissions();
+        });
+        
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Install prompt handling
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button if not already installed
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.style.display = 'block';
+            }
+        });
+        
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('App installed');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+    </script>
+</body>
+</html>
